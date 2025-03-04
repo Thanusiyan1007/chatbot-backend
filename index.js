@@ -7,12 +7,21 @@ const openai = new OpenAI({
 });
 
 // Function to get ChatGPT response
-async function getChatGPTResponse(prompt) {
+async function getChatGPTResponse(userPrompt) {
   try {
     const response = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo', // Use the appropriate model
-      messages: [{ role: 'user', content: prompt }],
-      max_tokens: 150,
+      messages: [
+        {
+          role: 'system',
+          content: "You are a helpful AI assistant. Provide clear and concise responses.",
+        },
+        {
+          role: 'user',
+          content: `User Input: "${userPrompt}" \nRespond in a friendly and informative way.`,
+        },
+      ],
+      max_tokens: 200, // Allow more space for responses
     });
 
     return response.choices[0].message.content.trim();
