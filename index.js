@@ -1,5 +1,6 @@
 require('dotenv').config(); // Load environment variables from .env file
 const { OpenAI } = require('openai');
+const readline = require('readline');
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -7,21 +8,12 @@ const openai = new OpenAI({
 });
 
 // Function to get ChatGPT response
-async function getChatGPTResponse(userPrompt) {
+async function getChatGPTResponse(prompt) {
   try {
     const response = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo', // Use the appropriate model
-      messages: [
-        {
-          role: 'system',
-          content: "You are a helpful AI assistant. Provide clear and concise responses.",
-        },
-        {
-          role: 'user',
-          content: `User Input: "${userPrompt}" \nRespond in a friendly and informative way.`,
-        },
-      ],
-      max_tokens: 200, // Allow more space for responses
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 150,
     });
 
     return response.choices[0].message.content.trim();
@@ -31,14 +23,28 @@ async function getChatGPTResponse(userPrompt) {
   }
 }
 
-// Export a serverless function for Vercel
-module.exports = async (req, res) => {
-  const { prompt } = req.query; // Get the prompt from the query string
+// Create an interactive CLI for user input
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+});
 
-  if (!prompt) {
-    return res.status(400).json({ error: 'Please provide a prompt.' });
-  }
+function askQuestion() {
+  rl.question('Enter your prompt: ', async (prompt) => {
+    if (prompt.toLowerCase() === 'exit') {
+      console.log('Goodbye!');
+      rl.close();
+      return;
+    }
 
-  const response = await getChatGPTResponse(prompt);
-  res.status(200).json({ response });
-};
+    const response = await getChatGPTResponse(prompt);
+    console.log('ChatGPT:', response);
+    
+    // Ask for another prompt
+    askQuestion();
+  });
+}
+
+// Start the chat loop
+console.log("Welcome to ChatGPT CLI! Type 'exit' to quit.");
+askQuestion();
